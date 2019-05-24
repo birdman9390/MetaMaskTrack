@@ -24,6 +24,7 @@ import deeplab_resnet
 from mysgd import mySGD
 from mysgd2 import mySGD2
 from get import *
+from normalizer import *
 docstr = """
 Usage:
     train.py [options]
@@ -52,7 +53,7 @@ nEpochs = int(args['--epochs'])  # Number of epochs for training (500.000/2079)
 batch_size = int(args['--batchSize'])
 db_root_dir = Path.db_offline_train_root_dir()
 nAveGrad = 4  # keep it even
-
+normalizer=RangeNormalize(0,1)
 save_dir = os.path.join(Path.save_offline_root_dir(), 'lr_' + str(base_lr) + '_wd_' + str(weight_decay))
 
 if not os.path.exists(save_dir):
@@ -211,29 +212,29 @@ optimizer=dict()
 meta_lr=0.05
 #init_grad=dict()
 for iteration in range(100):
-    net = deeplab_resnet.Res_Deeplab_no_msc(int(args['--NoLabels']))
-    net.float()
+#    net = deeplab_resnet.Res_Deeplab_no_msc(int(args['--NoLabels']))
+#    net.float()
     if iteration==10:
         meta_lr=meta_lr*0.1
     if iteration==20:
         meta_lr=meta_lr*0.1
-    saved_state_dict = torch.load('pretrained/MS_DeepLab_resnet_pretrained_COCO_init.pth')
-    if int(args['--NoLabels']) != 21:
-        for i in saved_state_dict:
-            i_parts = i.split('.')
-            if i_parts[1] == 'layer5':
-                saved_state_dict[i] = net.state_dict()[i]
-            if i_parts[1] == 'conv1':
-                saved_state_dict[i] = torch.cat((saved_state_dict[i], torch.FloatTensor(64, 1, 7, 7).normal_(0,0.0001)), 1)
-    net.load_state_dict(saved_state_dict)
-    if torch.cuda.device_count() > 1:
-        print("Let's use", torch.cuda.device_count(), "GPUs!")
-        net = nn.DataParallel(net)
-    if torch.cuda.is_available():
-        print('CUDA available')
-        net.cuda()
-    else:
-        print('CUDA not available')
+#    saved_state_dict = torch.load('pretrained/MS_DeepLab_resnet_pretrained_COCO_init.pth')
+#    if int(args['--NoLabels']) != 21:
+#        for i in saved_state_dict:
+#            i_parts = i.split('.')
+#            if i_parts[1] == 'layer5':
+#                saved_state_dict[i] = net.state_dict()[i]
+#            if i_parts[1] == 'conv1':
+#                saved_state_dict[i] = torch.cat((saved_state_dict[i], torch.FloatTensor(64, 1, 7, 7).normal_(0,0.0001)), 1)
+#    net.load_state_dict(saved_state_dict)
+#    if torch.cuda.device_count() > 1:
+#        print("Let's use", torch.cuda.device_count(), "GPUs!")
+#        net = nn.DataParallel(net)
+#    if torch.cuda.is_available():
+#        print('CUDA available')
+#        net.cuda()
+#    else:
+#        print('CUDA not available')
     iterLoss=0
     for epoch in range(1,3):
         trainingDataSetSize = 0
@@ -280,6 +281,7 @@ for iteration in range(100):
                 inputs, gts, prev_frame_mask = inputs.cuda(), gts.cuda(), prev_frame_mask.cuda()
 
             input_rgb_mask = torch.cat([inputs, prev_frame_mask], 1)
+            input_rgb_mask = torch.stack([normalizer(input_rgb_mask[i]) for i in range(4)])
             noImages, noChannels, height, width = input_rgb_mask.shape
 
             output_mask = net(input_rgb_mask)
@@ -350,7 +352,7 @@ for iteration in range(100):
                 inputs, gts, prev_frame_mask = inputs.cuda(), gts.cuda(), prev_frame_mask.cuda()
 
             input_rgb_mask = torch.cat([inputs, prev_frame_mask], 1)
-
+            input_rgb_mask = torch.stack([normalizer(input_rgb_mask[i]) for i in range(4)])
             noImages, noChannels, height, width = input_rgb_mask.shape
 
             output_mask = net(input_rgb_mask)
@@ -378,7 +380,7 @@ for iteration in range(100):
                 #print('meta_alpha!')
                 #print(meta_alphas[epoch][0][index])
                 meta_alphas[epoch][0][index]=meta_alphas[epoch][0][index]+(meta_lr)*(par.grad.data*grad_list['0-'+str(index)])
-                torch.clamp(meta_alphas[epoch][0][index],min=0)
+                torch.clamp(meta_alphas[epoch][0][index],min=0.000001,max=0.05)
                 #print('-----------Gradient--------------')
                 #print('index :'+str(index))
                 #print(par.grad.data)
@@ -387,7 +389,7 @@ for iteration in range(100):
                 meta_alphas[epoch][1][index]=meta_alphas[epoch][1][index]+(meta_lr)*(par.grad.data*grad_list['1-'+str(index)])
                 #print('meta_alpha!')
                 #print(meta_alphas[epoch][1][index])
-                torch.clamp(meta_alphas[epoch][1][index],min=0)
+                torch.clamp(meta_alphas[epoch][1][index],min=0.000001,max=0.05)
 
 #                meta_alphas[epoch][name]=meta_alphas[epoch][name]+(meta_lr)*(meta_grad_keep[name]*grad_list[name])
             meta_optimizer.zero_grad()

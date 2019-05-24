@@ -101,7 +101,7 @@ class mySGD2(Optimizer):
                         d_p = d_p.add(momentum, buf)
                     else:
                         d_p = buf
-                #p.data.add_(-1,group['lr'][index]* d_p)
+                p.data.add_(-1,group['lr'][index]* d_p)
                 #grad_list[str(gindex)+'-'+str(index)]=d_p
                 #if iii==0:
                 #    iii=1

@@ -74,7 +74,7 @@ parent_wd = 0.0001
 nAveGrad = 8  # 4 initially....keep it even
 aveGrad = 0
 
-save_dir = os.path.join(Path.save_root_dir(),'lr_'+str(base_lr)+'_wd_'+str(weight_decay))
+save_dir = os.path.join(Path.save_root_dir(),'lr_'+str(base_lr)+'_wd_'+str(weight_decay)+'_several2')
 
 if not os.path.exists(save_dir):
     os.makedirs(os.path.join(save_dir))
@@ -229,8 +229,8 @@ optimizer=dict()
 
 
 print("Training Network")
-for epoch in range(1,3):
-
+for epochs in range(1,11):
+    epoch=(epochs%2)+1
     if alreadyTrained:
         continue
 
@@ -332,13 +332,13 @@ for epoch in range(1,3):
         epochTrainRecall = epochTrainRecall / trainingDataSetSize
 
         print('Object ID: ' + str(object_id))
-        print('Epoch: ' + str(epoch) + ', Loss: ' + str(epochLoss) + '\n')
-        print('Epoch: ' + str(epoch) + ', Train Precision: ' + str(epochTrainPrecision) + '\n')
-        print('Epoch: ' + str(epoch) + ', Train Recall: ' + str(epochTrainRecall) + '\n')
+        print('Epoch: ' + str(epochs) + ', Loss: ' + str(epochLoss) + '\n')
+        print('Epoch: ' + str(epochs) + ', Train Precision: ' + str(epochTrainPrecision) + '\n')
+        print('Epoch: ' + str(epochs) + ', Train Recall: ' + str(epochTrainRecall) + '\n')
 
-        file_online_loss.write('Epoch: ' + str(epoch) + ', Object ID: ' + str(object_id)  + ', Loss: ' + str(epochLoss) + '\n')
-        file_precision.write('Epoch: ' + str(epoch) + ', Object ID: ' + str(object_id) + ', Precision: ' + str(epochTrainPrecision) + '\n')
-        file_recall.write('Epoch: ' + str(epoch) + ', Object ID: ' + str(object_id) + ', Recall: ' + str(epochTrainRecall) + '\n')
+        file_online_loss.write('Epoch: ' + str(epochs) + ', Object ID: ' + str(object_id)  + ', Loss: ' + str(epochLoss) + '\n')
+        file_precision.write('Epoch: ' + str(epochs) + ', Object ID: ' + str(object_id) + ', Precision: ' + str(epochTrainPrecision) + '\n')
+        file_recall.write('Epoch: ' + str(epochs) + ', Object ID: ' + str(object_id) + ', Recall: ' + str(epochTrainRecall) + '\n')
 
         loss_array[object_id].append(epochLoss)
         precision_array[object_id].append(epochTrainPrecision)
@@ -355,7 +355,7 @@ for epoch in range(1,3):
 
         print('This epoch took: ' + str(epoch_mins) + ' minutes')
 
-        torch.save(nets[object_id].state_dict(), os.path.join(save_dir, 'online_training_' + seq_name + '_object_id_' + str(object_id) + 'epoch_' + str(epoch) + '.pth'))
+        torch.save(nets[object_id].state_dict(), os.path.join(save_dir, 'online_training_' + seq_name + '_object_id_' + str(object_id) + 'epoch_' + str(epochs) + '.pth'))
 
 #        for param_group in optimizer[object_id].param_groups:
 #            param_group['lr'] = param_group['lr']*lr_factor_array[epoch-1]
