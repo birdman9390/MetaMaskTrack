@@ -279,7 +279,8 @@ for epoch in range(1,3):
         print('Starting for object ID: ' + str(object_id) + ', Epoch no: ' + str(epoch))
 
         for ii, sample_batched in enumerate(trainloader[object_id]):
-
+            if ii==20:
+                break
             inputs, gts, df1, df2 = sample_batched['image'], sample_batched['gt'], sample_batched['df1'], sample_batched['df2']
 
             for df_id in deformations:
@@ -312,7 +313,7 @@ for epoch in range(1,3):
                 epochTrainPrecision += calculate_precision(output_mask, gts)
                 epochTrainRecall += calculate_recall(output_mask, gts)
                 trainingDataSetSize += 1
-                print(loss1.data[0])
+                print(str(ii)+','+str(df_id)+','+str(loss1.data[0]))
 
                 loss_minibatch_array[object_id].append(loss1.data[0])
 
